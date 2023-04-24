@@ -129,11 +129,41 @@ def get_planet(planet_id):
                          "results": results}
         return response_body, 200
 
+@app.route('/users/favorites', methods=['GET'])
+def get_fav_user():
+    current_user = 1
+    cuser = User.query.filter_by(id=current_user).first()
+    content_people = cuser.favorite_people
+    result_people = [favorite.name for favorite in content_people]
+
+    content_planet = cuser.favorite_planet
+    result_planet = [favorite.name for favorite in content_planet]
+
+    result = []
+    result.append(result_people)
+    result.append(result_planet)
+
+
+
+    response_body = {"message": "ok",
+                     "results": result}
+    return response_body, 200
+
 @app.route('/favorites/people', methods=['GET'])
 def get_fav():
     current_user = 1
     cuser = User.query.filter_by(id=current_user).first()
     content = cuser.favorite_people
+    result = [favorite.name for favorite in content]
+    response_body = {"message": "ok",
+                     "results": result}
+    return response_body, 200
+
+@app.route('/favorites/planet', methods=['GET'])
+def get_fav_planet():
+    current_user = 1
+    cuser = User.query.filter_by(id=current_user).first()
+    content = cuser.favorite_planet
     result = [favorite.name for favorite in content]
     response_body = {"message": "ok",
                      "results": result}
@@ -172,7 +202,37 @@ def mod_people_fav(people_id):
         return response_body, 400
 
 
-
+@app.route('/favorites/planet/<int:planet_id>', methods=['POST', 'DELETE'])
+def mod_planet_fav(planet_id):
+    if request.method == "POST":
+        current_user = 1
+        cuser = User.query.filter_by(id=current_user).first() # Usuario que está haciendo cosas
+        fav_planet = Planets.query.filter_by(id=planet_id).first() # Personaje que vamos a añadir
+        if fav_planet in cuser.favorite_planet:
+            response_body = {"message": "Error. Already exists"}
+            return response_body, 400
+        else:
+            cuser.favorite_planet.append(fav_planet)
+            db.session.commit()
+            response_body = {"message": "ok",
+                            "added": fav_planet.name}
+            return response_body, 200
+    elif request.method == "DELETE":
+        current_user = 1
+        cuser = User.query.filter_by(id=current_user).first() # Usuario que está haciendo cosas
+        fav_planet = Planets.query.filter_by(id=planet_id).first() # Personaje que vamos a eliminar
+        if fav_planet in cuser.favorite_planet:
+            cuser.favorite_planet.remove(fav_planet)
+            db.session.commit()
+            response_body = {"message": "ok",
+                            "deleted": fav_planet.name}
+            return response_body, 200
+        else:
+            response_body = {"message": "Error. Record not found."}
+            return response_body, 404
+    else:
+        response_body = {"message": "Error. Method not allowed."}
+        return response_body, 400
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
